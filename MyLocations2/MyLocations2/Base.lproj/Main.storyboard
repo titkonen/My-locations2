@@ -75,6 +75,14 @@
                         <viewLayoutGuide key="safeArea" id="PQr-Ze-W5v"/>
                     </view>
                     <tabBarItem key="tabBarItem" title="Tag" image="first" id="acW-dT-cKf"/>
+                    <connections>
+                        <outlet property="addressLabel" destination="3fZ-yS-ANl" id="9AK-Cw-vvG"/>
+                        <outlet property="getButton" destination="frb-8N-ur0" id="y84-nk-fRJ"/>
+                        <outlet property="latitudeLabel" destination="ovg-hR-J4e" id="fpd-uI-LWE"/>
+                        <outlet property="longitudeLabel" destination="9IV-LL-Ekc" id="0AW-CK-2pQ"/>
+                        <outlet property="messageLabel" destination="mwr-Ub-4xS" id="i2B-FU-tUe"/>
+                        <outlet property="tagButton" destination="Tje-1p-Qgq" id="Hzd-q2-GJI"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="W5J-7L-Pyd" sceneMemberID="firstResponder"/>
             </objects>
