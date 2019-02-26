@@ -40,6 +40,9 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
   let locationManager = CLLocationManager()
   var location: CLLocation?
   
+  var updatingLocation = false //p.535
+  var lastLocationError: Error? //p.535
+  
   override func viewDidLoad() {
     super.viewDidLoad()
     updateLabels()
@@ -54,8 +57,11 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
     }
     
     if authStatus == .denied || authStatus == .restricted {
-      showLocationServicesDeniedAlert()
-      return
+      startLocationManager()
+      updateLabels()
+      //p539
+      //showLocationServicesDeniedAlert()
+      //return
     }
     
     locationManager.delegate = self
@@ -82,13 +88,55 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
       longitudeLabel.text = ""
       addressLabel.text = ""
       tagButton.isHidden = true
-      messageLabel.text = "Tap 'Get My Location' to Start"
+      // remove the following line
+     // messageLabel.text = "Tap 'Get My Location' to Start"
+      // The new code starts here
+      let statusMessage: String
+      if let error = lastLocationError as NSError? {
+        if error.domain == kCLErrorDomain &&
+          error.code == CLError.denied.rawValue {
+          statusMessage = "Location Services Disabled"
+        } else {
+          statusMessage = "Error Getting Location"
+        }
+      } else if !CLLocationManager.locationServicesEnabled() {
+        statusMessage = "Location Services Disabled"
+      } else if updatingLocation {
+        statusMessage = "Searching..."
+      } else {
+        statusMessage = "Tap 'Get My Location' to Start"
+      }
+      messageLabel.text = statusMessage
     }
   }
   
   // MARK: - CLLocationManagerDelegate
   func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
     print("didFailWithError \(error.localizedDescription)")
+    
+    if (error as NSError).code == CLError.locationUnknown.rawValue {
+      return
+    }
+    lastLocationError = error
+    stopLocationManager()
+    updateLabels()
+  }
+  
+  func startLocationManager() {
+    if CLLocationManager.locationServicesEnabled() {
+      locationManager.delegate = self
+      locationManager.desiredAccuracy = kCLLocationAccuracyNearestTenMeters
+      locationManager.startUpdatingLocation()
+      updatingLocation = true
+    }
+  }
+  
+  func stopLocationManager() {
+    if updatingLocation {
+      locationManager.stopUpdatingLocation()
+      locationManager.delegate = nil
+      updatingLocation = false
+    }
   }
   
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
@@ -96,6 +144,7 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
     print("didUpdateLocations \(newLocation)")
     
     location = newLocation
+    lastLocationError = nil // This clears out the old error state
     updateLabels()
   }
 }
