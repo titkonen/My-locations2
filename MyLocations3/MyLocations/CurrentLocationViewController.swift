@@ -6,9 +6,10 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
   @IBOutlet weak var latitudeLabel: UILabel!
   @IBOutlet weak var longitudeLabel: UILabel!
   @IBOutlet weak var addressLabel: UILabel!
-  @IBOutlet weak var tagButton: UIButton!
   @IBOutlet weak var getButton: UIButton!
-  
+  @IBOutlet weak var tagButton: UIButton!
+    
+    
   let locationManager = CLLocationManager()
   var location: CLLocation?
   var updatingLocation = false //p.535
@@ -22,6 +23,17 @@ class CurrentLocationViewController: UIViewController, CLLocationManagerDelegate
   override func viewDidLoad() {
     super.viewDidLoad()
     updateLabels()
+  }
+  
+  // Will hide the navigation bar
+ override func viewWillAppear(_ animated: Bool) {
+    super.viewWillAppear(animated)
+    navigationController?.isNavigationBarHidden = true
+  }
+  
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillAppear(animated)
+    navigationController?.isNavigationBarHidden = false
   }
   
   // MARK:- Actions
