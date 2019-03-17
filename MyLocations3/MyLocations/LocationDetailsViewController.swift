@@ -1,5 +1,6 @@
 import UIKit
 import CoreLocation
+import CoreData
 
 // p.594
 private let dateFormatter: DateFormatter = {
@@ -17,9 +18,12 @@ class LocationDetailsViewController: UITableViewController {
   @IBOutlet weak var addressLabel: UILabel!
   @IBOutlet weak var dateLabel: UILabel!
   
+  // Variables
   var coordinate = CLLocationCoordinate2D( latitude: 0, longitude: 0)
   var placemark: CLPlacemark?
   var categoryName = "No Category"
+  var managedObjectContext: NSManagedObjectContext! //s.639
+  var date = Date() //s.649
   
   // Display passed in values on screen
   override func viewDidLoad() {
@@ -36,7 +40,7 @@ class LocationDetailsViewController: UITableViewController {
     } else {
       addressLabel.text = "No Address Found"
     }
-    dateLabel.text = format(date: Date())
+    dateLabel.text = format(date: date)
     
     // Hide keyboard
     let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
@@ -75,9 +79,24 @@ class LocationDetailsViewController: UITableViewController {
     let hudView = HudView.hud(inView: navigationController!.view, animated: true)
     
     hudView.text = "Tagged"
-    afterDelay(0.6) {
-      hudView.hide() // piilottaa check mark modalin
-      self.navigationController?.popViewController(animated: true)
+    
+    let location = Location(context: managedObjectContext) // 1 p.650
+    
+    location.locationDescription = descriptionTextView.text // 2
+    location.category = categoryName
+    location.latitude = coordinate.latitude
+    location.longitude = coordinate.longitude
+    location.date = date
+    location.placemark = placemark
+    
+    do { // 3
+      try managedObjectContext.save()
+      afterDelay(0.6) {
+        hudView.hide() // piilottaa check mark modalin
+        self.navigationController?.popViewController(animated: true)
+      }
+    } catch { // 4
+      fatalCoreDataError(error)
     }
   }
   

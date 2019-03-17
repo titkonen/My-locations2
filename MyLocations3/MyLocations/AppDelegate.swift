@@ -1,31 +1,4 @@
-/// Copyright (c) 2018 Razeware LLC
-///
-/// Permission is hereby granted, free of charge, to any person obtaining a copy
-/// of this software and associated documentation files (the "Software"), to deal
-/// in the Software without restriction, including without limitation the rights
-/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-/// copies of the Software, and to permit persons to whom the Software is
-/// furnished to do so, subject to the following conditions:
-///
-/// The above copyright notice and this permission notice shall be included in
-/// all copies or substantial portions of the Software.
-///
-/// Notwithstanding the foregoing, you may not use, copy, modify, merge, publish,
-/// distribute, sublicense, create a derivative work, and/or sell copies of the
-/// Software in any work that is designed, intended, or marketed for pedagogical or
-/// instructional purposes related to programming, coding, application development,
-/// or information technology.  Permission for such use, copying, modification,
-/// merger, publication, distribution, sublicensing, creation of derivative works,
-/// or sale is expressly withheld.
-///
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-/// THE SOFTWARE.
-
+import CoreData
 import UIKit
 
 @UIApplicationMain
@@ -33,8 +6,34 @@ import UIKit
 
   var window: UIWindow?
 
+  lazy var persistentContainer: NSPersistentContainer = {
+    let container = NSPersistentContainer(name: "DataModel")
+    container.loadPersistentStores(completionHandler: {
+      storeDescription, error in
+      if let error = error {
+        fatalError("Could load data store: \(error)")
+      }
+    })
+    return container
+  }()
+  
+  lazy var managedObjectContext: NSManagedObjectContext = persistentContainer.viewContext
+  
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
+    
+    // code from page 642
+    let tabController = window!.rootViewController as! UITabBarController
+    
+    if let tabViewControllers = tabController.viewControllers {
+      let navController = tabViewControllers[0]
+                    as! UINavigationController
+      let controller = navController.viewControllers.first
+                    as! CurrentLocationViewController
+      controller.managedObjectContext = managedObjectContext
+    }
+    print(applicationDocumentsDirectory)
+    listenForFatalCoreDataNotifications() // p.658
     return true
   }
 
@@ -60,5 +59,35 @@ import UIKit
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
   }
 
+  // MARK: - Helper methods
+  func listenForFatalCoreDataNotifications() {
+    // 1
+    NotificationCenter.default.addObserver(forName: CoreDataSaveFailedNotification,
+                                           object: nil, queue: OperationQueue.main,
+                                           using: { notification in
+                                            // 2
+                                            let message = """
+                                            There was a fatal error in the app and it cannot continue.
+                                            Press OK to terminate the app. Sorry for the inconvenience.
+                                            """
+                                            // 3
+                                            let alert = UIAlertController(
+                                              title: "Internal Error", message: message, preferredStyle: .alert)
+                                            
+                                            // 4
+                                            let action = UIAlertAction(title: "OK", style: .default) { _ in
+                                              
+                                              let expection = NSException(
+                                                name: NSExceptionName.internalInconsistencyException,
+                                                reason: "Fatal Core Data error", userInfo: nil)
+                                              expection.raise()
+                                            }
+                                            alert.addAction(action)
+                                            
+                                            // 5
+                                            let tabController = self.window!.rootViewController!
+                                            tabController.present(alert, animated: true, completion: nil)
+    })
+  }
 }
 
