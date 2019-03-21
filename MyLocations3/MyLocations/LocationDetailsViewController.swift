@@ -18,18 +18,35 @@ class LocationDetailsViewController: UITableViewController {
   @IBOutlet weak var addressLabel: UILabel!
   @IBOutlet weak var dateLabel: UILabel!
   
-  // Variables
+  // Variable properties
   var coordinate = CLLocationCoordinate2D( latitude: 0, longitude: 0)
   var placemark: CLPlacemark?
   var categoryName = "No Category"
   var managedObjectContext: NSManagedObjectContext! //s.639
   var date = Date() //s.649
+  var locationToEdit: Location? { //s. 673
+    didSet {
+      if let location = locationToEdit {
+        descriptionText = location.locationDescription
+        categoryName = location.category
+        date = location.date
+        coordinate = CLLocationCoordinate2DMake(location.latitude, location.longitude)
+        placemark = location.placemark
+      }
+    }
+  }
+  
+  var descriptionText = "" //s. 673
   
   // Display passed in values on screen
   override func viewDidLoad() {
     super.viewDidLoad()
     
-    descriptionTextView.text = ""
+    if let location = locationToEdit {
+      title = "Edit Location"
+    }
+    
+    descriptionTextView.text = descriptionText
     categoryLabel.text = categoryName
     
     latitudeLabel.text = String(format: "%.8f", coordinate.latitude)

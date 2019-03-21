@@ -26,11 +26,18 @@ import UIKit
     let tabController = window!.rootViewController as! UITabBarController
     
     if let tabViewControllers = tabController.viewControllers {
-      let navController = tabViewControllers[0]
+      // First tab
+      var navController = tabViewControllers[0]
                     as! UINavigationController
-      let controller = navController.viewControllers.first
+      let controller1 = navController.viewControllers.first
                     as! CurrentLocationViewController
-      controller.managedObjectContext = managedObjectContext
+      controller1.managedObjectContext = managedObjectContext
+      // Second tab
+      navController = tabViewControllers[1]
+                      as! UINavigationController
+      let controller2 = navController.viewControllers.first
+                      as! LocationsViewController
+      controller2.managedObjectContext = managedObjectContext
     }
     print(applicationDocumentsDirectory)
     listenForFatalCoreDataNotifications() // p.658
