@@ -13,12 +13,17 @@ class LocationsViewController: UITableViewController {
       let entity = Location.entity()
       fetchRequest.entity = entity
       
-      let sortDescriptor = NSSortDescriptor(key: "date",
-                                            ascending: true)
-      fetchRequest.sortDescriptors = [sortDescriptor]
+   //   let sortDescriptor = NSSortDescriptor(key: "date",
+   //                                         ascending: true)
+      // 685
+      let sort1 = NSSortDescriptor(key: "category", ascending: true)
+      let sort2 = NSSortDescriptor(key: "date", ascending: true)
+      fetchRequest.sortDescriptors = [sort1, sort2]
+      
+   //   fetchRequest.sortDescriptors = [sortDescriptor]
       fetchRequest.fetchBatchSize = 20
       
-      let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.managedObjectContext, sectionNameKeyPath: nil, cacheName: "Locations")
+      let fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: self.managedObjectContext, sectionNameKeyPath: "category", cacheName: "Locations")
       
       fetchedResultsController.delegate = self
       return fetchedResultsController
@@ -28,6 +33,7 @@ class LocationsViewController: UITableViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     performFetch()
+    navigationItem.rightBarButtonItem = editButtonItem //p685 Lisää Edit buttonin navigation bariin
   }
   
   // Mark: - Helper methods
@@ -58,6 +64,30 @@ class LocationsViewController: UITableViewController {
     cell.configure(for: location)
     
     return cell
+  }
+  
+  // p. 686
+  override func numberOfSections(in tableView: UITableView) -> Int {
+    return fetchedResultsController.sections!.count
+  }
+
+  override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+    let sectionInfo = fetchedResultsController.sections![section]
+    return sectionInfo.name
+  }
+  
+  // Deleting locations p.684
+  override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+    if editingStyle == .delete {
+      let location = fetchedResultsController.object(at:
+                                                indexPath)
+      managedObjectContext.delete(location)
+      do {
+        try managedObjectContext.save()
+      } catch {
+        fatalCoreDataError(error)
+      }
+    }
   }
   
   // MARK: - Navigation
