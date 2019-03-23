@@ -38,6 +38,7 @@ import UIKit
       let controller2 = navController.viewControllers.first
                       as! LocationsViewController
       controller2.managedObjectContext = managedObjectContext
+      let _ = controller2.view // p.683 Tämän pitäisi estää appsin kaatuminen vanhemmissa IOS:issa, mutta voi olla että on tarpeeton?
     }
     print(applicationDocumentsDirectory)
     listenForFatalCoreDataNotifications() // p.658
