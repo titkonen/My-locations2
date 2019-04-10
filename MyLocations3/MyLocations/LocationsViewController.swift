@@ -76,11 +76,12 @@ class LocationsViewController: UITableViewController {
     return sectionInfo.name
   }
   
-  // Deleting locations p.684
+  // Deleting locations p.684. Removes photofile as well
   override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
     if editingStyle == .delete {
       let location = fetchedResultsController.object(at:
                                                 indexPath)
+      location.removePhotoFile()
       managedObjectContext.delete(location)
       do {
         try managedObjectContext.save()

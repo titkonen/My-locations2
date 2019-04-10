@@ -11,12 +11,18 @@ private let dateFormatter: DateFormatter = {
 }()
 
 class LocationDetailsViewController: UITableViewController {
+  
+  // Outlets
   @IBOutlet weak var descriptionTextView: UITextView!
   @IBOutlet weak var categoryLabel: UILabel!
   @IBOutlet weak var latitudeLabel: UILabel!
   @IBOutlet weak var longitudeLabel: UILabel!
   @IBOutlet weak var addressLabel: UILabel!
   @IBOutlet weak var dateLabel: UILabel!
+  @IBOutlet weak var imageView: UIImageView! //p.718
+  @IBOutlet weak var addPhotoLabel: UILabel! //p.718
+  @IBOutlet weak var imageHeight: NSLayoutConstraint!
+  
   
   // Variable properties
   var coordinate = CLLocationCoordinate2D( latitude: 0, longitude: 0)
@@ -37,6 +43,8 @@ class LocationDetailsViewController: UITableViewController {
   }
   
   var descriptionText = "" //s. 673
+  var image: UIImage? //p.720
+  var observer: Any?
   
   // Display passed in values on screen
   override func viewDidLoad() {
@@ -44,6 +52,12 @@ class LocationDetailsViewController: UITableViewController {
     
     if let location = locationToEdit {
       title = "Edit Location"
+      // New code block
+      if location.hasPhoto {
+        if let theImage = location.photoImage {
+          show(image: theImage)
+        }
+      }
     }
     
     descriptionTextView.text = descriptionText
@@ -63,6 +77,8 @@ class LocationDetailsViewController: UITableViewController {
     let gestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(hideKeyboard))
     gestureRecognizer.cancelsTouchesInView = false
     tableView.addGestureRecognizer(gestureRecognizer)
+    
+    listenForBackgroundNotification() //p.725
   }
   
   @objc func hideKeyboard(_ gestureRecognizer: UIGestureRecognizer) {
@@ -86,10 +102,14 @@ class LocationDetailsViewController: UITableViewController {
   }
   
   override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-    if indexPath.section == 0 && indexPath.row == 0 {
-      descriptionTextView.becomeFirstResponder()
-    }
+      if indexPath.section == 0 && indexPath.row == 0 {
+        descriptionTextView.becomeFirstResponder()
+      } else if indexPath.section == 1 && indexPath.row == 0 {
+        tableView.deselectRow(at: indexPath, animated: true)
+        pickPhoto()
+      }
   }
+
   
   // MARK: - Actions
   @IBAction func done() {
@@ -102,6 +122,7 @@ class LocationDetailsViewController: UITableViewController {
     } else {
       hudView.text = "Tagged"
       location = Location(context: managedObjectContext)
+      location.photoID = nil //p.734
     }
     
     location.locationDescription = descriptionTextView.text // 2
@@ -110,6 +131,20 @@ class LocationDetailsViewController: UITableViewController {
     location.longitude = coordinate.longitude
     location.date = date
     location.placemark = placemark
+    
+    // save the image
+    if let image = image {
+      if !location.hasPhoto {
+        location.photoID = Location.nextPhotoID() as NSNumber
+      }
+      if let data = image.jpegData(compressionQuality: 0.5) {
+        do {
+          try data.write(to: location.photoURL, options: .atomic)
+        } catch {
+          print("Error writing file: \(error)")
+        }
+      }
+    }
     
     do { // 3
       try managedObjectContext.save()
@@ -172,7 +207,107 @@ class LocationDetailsViewController: UITableViewController {
     }
   }
   
+  // If addphoto is not picked up (nil)
+  func show(image: UIImage) {
+    imageView.image = image
+    imageView.isHidden = false
+    addPhotoLabel.text = ""
+    imageHeight.constant = 260
+    tableView.reloadData()
+  }
+  
+  // This sends ACTIVE actionsheet or Imagepicker modals away if user quits application
+  func listenForBackgroundNotification() {
+    observer = NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: OperationQueue.main) { [weak self] _ in
+      
+      if let weakSelf = self {
+        if weakSelf.presentedViewController != nil {
+          weakSelf.dismiss(animated: false, completion: nil)
+        }
+        weakSelf.descriptionTextView.resignFirstResponder()
+      }
+    }
+  }
+  
+  deinit {
+    print("*** deinit \(self)")
+    NotificationCenter.default.removeObserver(observer)
+  }
+  
+} // Class ends
+
+// Photo extension part
+extension LocationDetailsViewController:
+    UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+  
+  // MARK: - Image Helper Methods
+  func takePhotoWithCamera() {
+    let imagePicker = UIImagePickerController()
+    imagePicker.sourceType = .camera
+    imagePicker.delegate = self
+    imagePicker.allowsEditing = true
+    present(imagePicker, animated: true, completion: nil)
+  }
+  
+  // MARK: - Image Picker Delegates
+  func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info:
+    [UIImagePickerController.InfoKey : Any]) {
+    
+    image = info[UIImagePickerController.InfoKey.editedImage]
+    as? UIImage
+    if let theImage = image {
+      show(image: theImage)
+    }
+    
+    dismiss(animated: true, completion: nil)
+  }
+  
+  func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+    dismiss(animated: true, completion: nil)
+  }
+  
+  // Choose photo from library
+  func choosePhotoFromLibrary() {
+    let imagePicker = UIImagePickerController()
+    imagePicker.sourceType = .photoLibrary
+    imagePicker.delegate = self
+    imagePicker.allowsEditing = true
+    present(imagePicker, animated: true, completion: nil)
+  }
+  
+  // Pick Photo
+  func pickPhoto() {
+    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+      showPhotoMenu()
+    } else {
+      choosePhotoFromLibrary()
+    }
+  }
+  
+  // Shows Photomenu
+  func showPhotoMenu() {
+    let alert = UIAlertController(title: nil, message: nil, preferredStyle: .actionSheet)
+    
+    let actCancel = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+    
+    alert.addAction(actCancel)
+    
+    let actPhoto = UIAlertAction(title: "Take Photo",
+                                 style: .default, handler: {
+                                  _ in self.takePhotoWithCamera()
+    })
+    
+    alert.addAction(actPhoto)
+    
+    let actLibrary = UIAlertAction(title: "Choose From Library",
+                                   style: .default, handler: {
+                                    _ in self.choosePhotoFromLibrary()
+    })
+    
+    alert.addAction(actLibrary)
+    
+    present(alert, animated: true, completion: nil)
+  }
   
 }
-
 
