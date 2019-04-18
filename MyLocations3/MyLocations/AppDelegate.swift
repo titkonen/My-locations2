@@ -21,6 +21,8 @@ import UIKit
   
   func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     // Override point for customization after application launch.
+    // Calls color customized UIelements
+    customizeAppearance()
     
     // code from page 642
     let tabController = window!.rootViewController as! UITabBarController
@@ -102,6 +104,18 @@ import UIKit
                                             let tabController = self.window!.rootViewController!
                                             tabController.present(alert, animated: true, completion: nil)
     })
+  }
+  
+  // Customize App UI with custom colours
+  func customizeAppearance() {
+    UINavigationBar.appearance().barTintColor = UIColor.black
+    UINavigationBar.appearance().titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.white ]
+    
+    UITabBar.appearance().barTintColor = UIColor.black
+    
+    let tintColor = UIColor(red: 255/255.0, green: 118/255.0,
+                            blue: 88/255.0, alpha: 1.0)
+    UITabBar.appearance().tintColor = tintColor
   }
 }
 

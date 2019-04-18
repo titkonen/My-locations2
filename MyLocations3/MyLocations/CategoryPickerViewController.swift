@@ -5,16 +5,15 @@ class CategoryPickerViewController: UITableViewController {
   
   let categories = [
     "No Category",
-    "Apple Store",
-    "Bar",
-    "Bookstore",
-    "Club",
-    "Grocery Store",
-    "Historic Building",
-    "House",
-    "Icecream Vendor",
-    "Landmark",
-    "Park"]
+    "Work",
+    "Business",
+    "Friends",
+    "Family",
+    "Hobbies",
+    "Food",
+    "Sports",
+    "Travel",
+    "Holiday"]
   
   var selectedIndexPath = IndexPath()
   
@@ -49,6 +48,9 @@ class CategoryPickerViewController: UITableViewController {
       } else {
         cell.accessoryType = .none
       }
+      let selection = UIView(frame: CGRect.zero)
+      selection.backgroundColor = UIColor(white: 1.0, alpha: 0.3)
+      cell.selectedBackgroundView = selection
       return cell
     
     }
